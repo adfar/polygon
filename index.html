@@ -8,86 +8,131 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0f1117;
-      --surface: #1a1d27;
-      --border: #2a2d3a;
-      --text: #e2e4ea;
-      --muted: #8b8fa3;
-      --accent: #6c8cff;
-      --accent-dim: rgba(108, 140, 255, 0.15);
-      --circle: rgba(108, 140, 255, 0.25);
-      --polygon-stroke: #6c8cff;
-      --polygon-fill: rgba(108, 140, 255, 0.08);
+      --bg: #0b0d14;
+      --surface: #141721;
+      --surface-hover: #1a1e2c;
+      --border: #232738;
+      --border-highlight: #3a3f55;
+      --text: #e8eaf0;
+      --muted: #7a7f96;
+      --accent: #7b9aff;
+      --accent-bright: #a0b8ff;
+      --accent-dim: rgba(123, 154, 255, 0.12);
+      --accent-glow: rgba(123, 154, 255, 0.06);
+      --circle: rgba(123, 154, 255, 0.18);
+      --polygon-stroke: #7b9aff;
+      --polygon-fill: rgba(123, 154, 255, 0.06);
+      --polygon-glow: rgba(123, 154, 255, 0.3);
+      --radius: 10px;
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
+      background-image:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(123, 154, 255, 0.04) 0%, transparent 70%),
+        radial-gradient(ellipse 60% 40% at 50% 100%, rgba(123, 154, 255, 0.02) 0%, transparent 70%);
       color: var(--text);
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       min-height: 100dvh;
-      padding: 1.5rem 1rem;
-      gap: 1.25rem;
+      padding: 2rem 1rem;
+      gap: 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
 
     h1 {
-      font-size: 1.25rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--text) 0%, var(--accent-bright) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .stats {
       display: flex;
-      gap: 1.5rem;
-      font-size: 0.85rem;
+      gap: 2rem;
+      font-size: 0.8rem;
       color: var(--muted);
+      justify-content: center;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
 
     .stats span {
-      color: var(--text);
+      color: var(--accent-bright);
       font-weight: 600;
       font-variant-numeric: tabular-nums;
     }
 
+    .canvas-wrap {
+      position: relative;
+      border-radius: 16px;
+      padding: 2px;
+      background: linear-gradient(145deg, var(--border-highlight), var(--border));
+    }
+
+    .canvas-wrap::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: 17px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(123,154,255,0.08), transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
     canvas {
       display: block;
-      width: min(80vw, 80vh, 500px);
-      height: min(80vw, 80vh, 500px);
-      border-radius: 12px;
+      position: relative;
+      z-index: 1;
+      width: min(78vw, 70vh, 460px);
+      height: min(78vw, 70vh, 460px);
+      border-radius: 14px;
       background: var(--surface);
-      border: 1px solid var(--border);
     }
 
     .controls {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.75rem;
+      gap: 0.6rem;
       justify-content: center;
       align-items: center;
       width: 100%;
-      max-width: 520px;
+      max-width: 480px;
     }
 
-    .input-group {
+    .sides-stepper {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius);
+      overflow: hidden;
     }
 
-    .input-group label {
-      font-size: 0.85rem;
+    .sides-stepper label {
+      font-size: 0.8rem;
       color: var(--muted);
+      padding: 0 0.6rem 0 0.75rem;
       white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
 
-    .input-group input {
-      width: 5rem;
+    .sides-stepper input {
+      width: 3.5rem;
       background: transparent;
       border: none;
       color: var(--text);
@@ -96,6 +141,52 @@
       text-align: center;
       outline: none;
       font-variant-numeric: tabular-nums;
+      padding: 0.5rem 0;
+      -moz-appearance: textfield;
+    }
+
+    .sides-stepper input::-webkit-inner-spin-button,
+    .sides-stepper input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .step-btn {
+      appearance: none;
+      background: transparent;
+      border: none;
+      border-left: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 1.3rem;
+      line-height: 1;
+      width: 2.5rem;
+      height: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .step-btn:hover {
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .step-btn:active {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    @media (pointer: coarse) {
+      .step-btn {
+        width: 3rem;
+        height: 3rem;
+        font-size: 1.5rem;
+      }
     }
 
     button {
@@ -103,16 +194,29 @@
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text);
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 500;
-      padding: 0.55rem 1rem;
-      border-radius: 8px;
+      padding: 0.6rem 1.1rem;
+      border-radius: var(--radius);
       cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
       white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    button:active { background: var(--accent-dim); }
+    button:hover {
+      background: var(--surface-hover);
+      border-color: var(--border-highlight);
+    }
+
+    button:active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
     button.active {
       background: var(--accent-dim);
       border-color: var(--accent);
@@ -126,8 +230,10 @@
     }
 
     .speed-group label {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
     }
 
     .speed-group select {
@@ -135,25 +241,36 @@
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--text);
-      font-size: 0.85rem;
-      padding: 0.55rem 0.75rem;
-      border-radius: 8px;
+      font-size: 0.8rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: var(--radius);
       cursor: pointer;
       outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .speed-group select:hover {
+      border-color: var(--border-highlight);
     }
   </style>
 </head>
 <body>
-  <h1>Polygon &rarr; Circle</h1>
-  <div class="stats">
-    <div>Sides: <span id="sideCount">3</span></div>
-    <div>Area ratio: <span id="areaRatio">—</span></div>
+  <header>
+    <h1>Polygon &rarr; Circle</h1>
+    <div class="stats">
+      <div>Sides <span id="sideCount">3</span></div>
+      <div>Area <span id="areaRatio">&mdash;</span></div>
+    </div>
+  </header>
+  <div class="canvas-wrap">
+    <canvas id="canvas"></canvas>
   </div>
-  <canvas id="canvas"></canvas>
   <div class="controls">
-    <div class="input-group">
+    <div class="sides-stepper">
       <label for="sidesInput">Sides</label>
       <input id="sidesInput" type="number" min="3" max="1000" value="3">
+      <button type="button" class="step-btn" id="btnMinus" aria-label="Remove side">&minus;</button>
+      <button type="button" class="step-btn" id="btnPlus" aria-label="Add side">+</button>
     </div>
     <button id="btnAnimate">Animate</button>
     <button id="btnReset">Reset</button>
@@ -175,6 +292,8 @@
     const areaRatioEl = document.getElementById("areaRatio");
     const btnAnimate = document.getElementById("btnAnimate");
     const btnReset = document.getElementById("btnReset");
+    const btnMinus = document.getElementById("btnMinus");
+    const btnPlus = document.getElementById("btnPlus");
     const speedSelect = document.getElementById("speedSelect");
 
     let sides = 3;
@@ -186,7 +305,7 @@
     let targetSides = 3;
     let transitionProgress = 1;
     let lastFrameTime = 0;
-    const TRANSITION_DURATION = 250; // ms for smooth morph
+    const TRANSITION_DURATION = 250;
 
     function resize() {
       const rect = canvas.getBoundingClientRect();
@@ -207,20 +326,13 @@
     }
 
     function lerpVertices(fromN, toN, t, cx, cy, r) {
-      // Interpolate from polygon with fromN sides to polygon with toN sides
-      // We use toN points on both shapes and interpolate positions
       const points = [];
-      const count = Math.max(fromN, toN) * 4; // high enough for smooth interpolation
-
+      const count = Math.max(fromN, toN) * 4;
       for (let i = 0; i < count; i++) {
         const frac = i / count;
         const angle = -Math.PI / 2 + 2 * Math.PI * frac;
-
-        // Point on fromN-gon at this angle
         const fromR = polygonRadiusAtAngle(fromN, r, frac);
-        // Point on toN-gon at this angle
         const toR = polygonRadiusAtAngle(toN, r, frac);
-
         const interpR = fromR + (toR - fromR) * t;
         points.push({
           x: cx + interpR * Math.cos(angle),
@@ -231,8 +343,6 @@
     }
 
     function polygonRadiusAtAngle(n, R, frac) {
-      // Distance from center to edge of regular n-gon (inscribed in circle of radius R)
-      // at a given fractional angle (0..1 = full rotation)
       const sectorAngle = (2 * Math.PI) / n;
       const angle = frac * 2 * Math.PI;
       const offset = angle % sectorAngle;
@@ -245,6 +355,60 @@
       return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     }
 
+    function drawShape(points, cx, cy, r, showVertices, n) {
+      // Glow layer
+      ctx.save();
+      ctx.shadowColor = "rgba(123, 154, 255, 0.35)";
+      ctx.shadowBlur = 20;
+      ctx.beginPath();
+      if (Array.isArray(points[0]) || points[0].x !== undefined) {
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+      }
+      ctx.closePath();
+      ctx.strokeStyle = "rgba(123, 154, 255, 0.5)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      // Fill
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y);
+      }
+      ctx.closePath();
+
+      // Gradient fill
+      const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      gradient.addColorStop(0, "rgba(123, 154, 255, 0.1)");
+      gradient.addColorStop(1, "rgba(123, 154, 255, 0.02)");
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      // Stroke
+      ctx.strokeStyle = "rgba(123, 154, 255, 0.85)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Vertices
+      if (showVertices && n <= 64) {
+        for (const v of points) {
+          ctx.beginPath();
+          ctx.arc(v.x, v.y, 3.5, 0, 2 * Math.PI);
+          ctx.fillStyle = "rgba(123, 154, 255, 0.9)";
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(v.x, v.y, 3.5, 0, 2 * Math.PI);
+          ctx.strokeStyle = "rgba(255,255,255,0.3)";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+
     function draw() {
       const w = canvas.getBoundingClientRect().width;
       const h = canvas.getBoundingClientRect().height;
@@ -254,14 +418,30 @@
 
       ctx.clearRect(0, 0, w, h);
 
-      // Draw reference circle
+      // Draw subtle grid dots
+      ctx.fillStyle = "rgba(123, 154, 255, 0.04)";
+      const spacing = 24;
+      for (let x = spacing; x < w; x += spacing) {
+        for (let y = spacing; y < h; y += spacing) {
+          ctx.beginPath();
+          ctx.arc(x, y, 0.5, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      }
+
+      // Draw reference circle with glow
+      ctx.save();
+      ctx.shadowColor = "rgba(123, 154, 255, 0.12)";
+      ctx.shadowBlur = 30;
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, 2 * Math.PI);
-      ctx.strokeStyle = var_circle();
+      ctx.strokeStyle = "rgba(123, 154, 255, 0.2)";
       ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 6]);
       ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
 
-      // Draw polygon (or interpolated shape)
       let currentN, areaR;
 
       if (transitionProgress < 1) {
@@ -270,19 +450,8 @@
         const toN = targetSides;
         const points = lerpVertices(fromN, toN, easedT, cx, cy, r);
 
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        for (let i = 1; i < points.length; i++) {
-          ctx.lineTo(points[i].x, points[i].y);
-        }
-        ctx.closePath();
-        ctx.fillStyle = var_polygonFill();
-        ctx.fill();
-        ctx.strokeStyle = var_polygonStroke();
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        drawShape(points, cx, cy, r, false, Math.max(fromN, toN));
 
-        // Interpolated area ratio
         const fromArea = areaRatioValue(fromN);
         const toArea = areaRatioValue(toN);
         areaR = fromArea + (toArea - fromArea) * easedT;
@@ -291,29 +460,7 @@
         const n = targetSides;
         currentN = n;
         const verts = getPolygonVertices(n, cx, cy, r);
-
-        ctx.beginPath();
-        ctx.moveTo(verts[0].x, verts[0].y);
-        for (let i = 1; i < n; i++) {
-          ctx.lineTo(verts[i].x, verts[i].y);
-        }
-        ctx.closePath();
-        ctx.fillStyle = var_polygonFill();
-        ctx.fill();
-        ctx.strokeStyle = var_polygonStroke();
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Draw vertices
-        if (n <= 64) {
-          for (const v of verts) {
-            ctx.beginPath();
-            ctx.arc(v.x, v.y, 3, 0, 2 * Math.PI);
-            ctx.fillStyle = var_polygonStroke();
-            ctx.fill();
-          }
-        }
-
+        drawShape(verts, cx, cy, r, true, n);
         areaR = areaRatioValue(n);
       }
 
@@ -322,13 +469,8 @@
     }
 
     function areaRatioValue(n) {
-      // Area of regular n-gon inscribed in circle / area of circle
       return (n * Math.sin((2 * Math.PI) / n)) / (2 * Math.PI);
     }
-
-    function var_circle() { return "rgba(108, 140, 255, 0.25)"; }
-    function var_polygonStroke() { return "#6c8cff"; }
-    function var_polygonFill() { return "rgba(108, 140, 255, 0.08)"; }
 
     function setSides(n) {
       n = Math.max(3, Math.min(1000, Math.round(n)));
@@ -342,32 +484,28 @@
       if (Math.abs(targetSides - displaySides) <= 20) {
         transitionProgress = 0;
         lastFrameTime = performance.now();
-        requestAnimationFrame(animate);
+        requestAnimationFrame(animateTransition);
       } else {
-        // Skip transition for large jumps
         transitionProgress = 1;
         displaySides = n;
         draw();
       }
     }
 
-    function animate(now) {
+    function animateTransition(now) {
       if (transitionProgress >= 1) return;
       const elapsed = now - lastFrameTime;
       transitionProgress = Math.min(1, transitionProgress + elapsed / TRANSITION_DURATION);
       lastFrameTime = now;
-
       draw();
-
       if (transitionProgress < 1) {
-        requestAnimationFrame(animate);
+        requestAnimationFrame(animateTransition);
       } else {
         displaySides = targetSides;
         draw();
       }
     }
 
-    // Animation loop (auto-incrementing sides)
     function startAnimation() {
       if (animating) return;
       animating = true;
@@ -410,6 +548,40 @@
     });
 
     btnReset.addEventListener("click", reset);
+
+    btnMinus.addEventListener("click", () => {
+      stopAnimation();
+      setSides(sides - 1);
+    });
+
+    btnPlus.addEventListener("click", () => {
+      stopAnimation();
+      setSides(sides + 1);
+    });
+
+    // Long-press repeat for stepper buttons
+    for (const [btn, delta] of [[btnMinus, -1], [btnPlus, 1]]) {
+      let holdTimer, holdInterval;
+      const startHold = (e) => {
+        e.preventDefault();
+        holdTimer = setTimeout(() => {
+          holdInterval = setInterval(() => {
+            stopAnimation();
+            setSides(sides + delta);
+          }, 100);
+        }, 400);
+      };
+      const endHold = () => {
+        clearTimeout(holdTimer);
+        clearInterval(holdInterval);
+      };
+      btn.addEventListener("touchstart", startHold, { passive: false });
+      btn.addEventListener("touchend", endHold);
+      btn.addEventListener("touchcancel", endHold);
+      btn.addEventListener("mousedown", startHold);
+      btn.addEventListener("mouseup", endHold);
+      btn.addEventListener("mouseleave", endHold);
+    }
 
     sidesInput.addEventListener("input", () => {
       const val = parseInt(sidesInput.value);
