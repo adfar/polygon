@@ -562,18 +562,28 @@
     // Long-press repeat for stepper buttons
     for (const [btn, delta] of [[btnMinus, -1], [btnPlus, 1]]) {
       let holdTimer, holdInterval;
+      let held = false;
       const startHold = (e) => {
         e.preventDefault();
+        held = false;
         holdTimer = setTimeout(() => {
+          held = true;
           holdInterval = setInterval(() => {
             stopAnimation();
             setSides(sides + delta);
           }, 100);
         }, 400);
       };
-      const endHold = () => {
+      const endHold = (e) => {
         clearTimeout(holdTimer);
         clearInterval(holdInterval);
+        // On touch devices, preventDefault on touchstart blocks the synthetic
+        // click event, so handle taps directly here instead.
+        if (e.type === "touchend" && !held) {
+          stopAnimation();
+          setSides(sides + delta);
+        }
+        held = false;
       };
       btn.addEventListener("touchstart", startHold, { passive: false });
       btn.addEventListener("touchend", endHold);
