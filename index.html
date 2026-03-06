@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Polygon to Circle</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e4ea;
+      --muted: #8b8fa3;
+      --accent: #6c8cff;
+      --accent-dim: rgba(108, 140, 255, 0.15);
+      --circle: rgba(108, 140, 255, 0.25);
+      --polygon-stroke: #6c8cff;
+      --polygon-fill: rgba(108, 140, 255, 0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100dvh;
+      padding: 1.5rem 1rem;
+      gap: 1.25rem;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .stats {
+      display: flex;
+      gap: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .stats span {
+      color: var(--text);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    canvas {
+      display: block;
+      width: min(80vw, 80vh, 500px);
+      height: min(80vw, 80vh, 500px);
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.4rem 0.75rem;
+    }
+
+    .input-group label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .input-group input {
+      width: 5rem;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 600;
+      text-align: center;
+      outline: none;
+      font-variant-numeric: tabular-nums;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 0.55rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+
+    button:active { background: var(--accent-dim); }
+    button.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .speed-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .speed-group label {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .speed-group select {
+      appearance: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.85rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: 8px;
+      cursor: pointer;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Polygon &rarr; Circle</h1>
+  <div class="stats">
+    <div>Sides: <span id="sideCount">3</span></div>
+    <div>Area ratio: <span id="areaRatio">—</span></div>
+  </div>
+  <canvas id="canvas"></canvas>
+  <div class="controls">
+    <div class="input-group">
+      <label for="sidesInput">Sides</label>
+      <input id="sidesInput" type="number" min="3" max="1000" value="3">
+    </div>
+    <button id="btnAnimate">Animate</button>
+    <button id="btnReset">Reset</button>
+    <div class="speed-group">
+      <label for="speedSelect">Speed</label>
+      <select id="speedSelect">
+        <option value="1500">Slow</option>
+        <option value="800" selected>Medium</option>
+        <option value="300">Fast</option>
+      </select>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const sidesInput = document.getElementById("sidesInput");
+    const sideCountEl = document.getElementById("sideCount");
+    const areaRatioEl = document.getElementById("areaRatio");
+    const btnAnimate = document.getElementById("btnAnimate");
+    const btnReset = document.getElementById("btnReset");
+    const speedSelect = document.getElementById("speedSelect");
+
+    let sides = 3;
+    let animating = false;
+    let animTimer = null;
+
+    // Transition state
+    let displaySides = 3;
+    let targetSides = 3;
+    let transitionProgress = 1;
+    let lastFrameTime = 0;
+    const TRANSITION_DURATION = 250; // ms for smooth morph
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw();
+    }
+
+    function getPolygonVertices(n, cx, cy, r) {
+      const verts = [];
+      for (let i = 0; i < n; i++) {
+        const angle = -Math.PI / 2 + (2 * Math.PI * i) / n;
+        verts.push({ x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) });
+      }
+      return verts;
+    }
+
+    function lerpVertices(fromN, toN, t, cx, cy, r) {
+      // Interpolate from polygon with fromN sides to polygon with toN sides
+      // We use toN points on both shapes and interpolate positions
+      const points = [];
+      const count = Math.max(fromN, toN) * 4; // high enough for smooth interpolation
+
+      for (let i = 0; i < count; i++) {
+        const frac = i / count;
+        const angle = -Math.PI / 2 + 2 * Math.PI * frac;
+
+        // Point on fromN-gon at this angle
+        const fromR = polygonRadiusAtAngle(fromN, r, frac);
+        // Point on toN-gon at this angle
+        const toR = polygonRadiusAtAngle(toN, r, frac);
+
+        const interpR = fromR + (toR - fromR) * t;
+        points.push({
+          x: cx + interpR * Math.cos(angle),
+          y: cy + interpR * Math.sin(angle),
+        });
+      }
+      return points;
+    }
+
+    function polygonRadiusAtAngle(n, R, frac) {
+      // Distance from center to edge of regular n-gon (inscribed in circle of radius R)
+      // at a given fractional angle (0..1 = full rotation)
+      const sectorAngle = (2 * Math.PI) / n;
+      const angle = frac * 2 * Math.PI;
+      const offset = angle % sectorAngle;
+      const halfSector = sectorAngle / 2;
+      const distFromCenter = (R * Math.cos(halfSector)) / Math.cos(offset - halfSector);
+      return Math.min(distFromCenter, R);
+    }
+
+    function easeInOut(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function draw() {
+      const w = canvas.getBoundingClientRect().width;
+      const h = canvas.getBoundingClientRect().height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const r = Math.min(w, h) * 0.38;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Draw reference circle
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+      ctx.strokeStyle = var_circle();
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Draw polygon (or interpolated shape)
+      let currentN, areaR;
+
+      if (transitionProgress < 1) {
+        const easedT = easeInOut(transitionProgress);
+        const fromN = displaySides;
+        const toN = targetSides;
+        const points = lerpVertices(fromN, toN, easedT, cx, cy, r);
+
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = var_polygonFill();
+        ctx.fill();
+        ctx.strokeStyle = var_polygonStroke();
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Interpolated area ratio
+        const fromArea = areaRatioValue(fromN);
+        const toArea = areaRatioValue(toN);
+        areaR = fromArea + (toArea - fromArea) * easedT;
+        currentN = Math.round(fromN + (toN - fromN) * easedT);
+      } else {
+        const n = targetSides;
+        currentN = n;
+        const verts = getPolygonVertices(n, cx, cy, r);
+
+        ctx.beginPath();
+        ctx.moveTo(verts[0].x, verts[0].y);
+        for (let i = 1; i < n; i++) {
+          ctx.lineTo(verts[i].x, verts[i].y);
+        }
+        ctx.closePath();
+        ctx.fillStyle = var_polygonFill();
+        ctx.fill();
+        ctx.strokeStyle = var_polygonStroke();
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw vertices
+        if (n <= 64) {
+          for (const v of verts) {
+            ctx.beginPath();
+            ctx.arc(v.x, v.y, 3, 0, 2 * Math.PI);
+            ctx.fillStyle = var_polygonStroke();
+            ctx.fill();
+          }
+        }
+
+        areaR = areaRatioValue(n);
+      }
+
+      sideCountEl.textContent = currentN;
+      areaRatioEl.textContent = (areaR * 100).toFixed(4) + "%";
+    }
+
+    function areaRatioValue(n) {
+      // Area of regular n-gon inscribed in circle / area of circle
+      return (n * Math.sin((2 * Math.PI) / n)) / (2 * Math.PI);
+    }
+
+    function var_circle() { return "rgba(108, 140, 255, 0.25)"; }
+    function var_polygonStroke() { return "#6c8cff"; }
+    function var_polygonFill() { return "rgba(108, 140, 255, 0.08)"; }
+
+    function setSides(n) {
+      n = Math.max(3, Math.min(1000, Math.round(n)));
+      if (n === targetSides && transitionProgress >= 1) return;
+
+      displaySides = targetSides;
+      targetSides = n;
+      sides = n;
+      sidesInput.value = n;
+
+      if (Math.abs(targetSides - displaySides) <= 20) {
+        transitionProgress = 0;
+        lastFrameTime = performance.now();
+        requestAnimationFrame(animate);
+      } else {
+        // Skip transition for large jumps
+        transitionProgress = 1;
+        displaySides = n;
+        draw();
+      }
+    }
+
+    function animate(now) {
+      if (transitionProgress >= 1) return;
+      const elapsed = now - lastFrameTime;
+      transitionProgress = Math.min(1, transitionProgress + elapsed / TRANSITION_DURATION);
+      lastFrameTime = now;
+
+      draw();
+
+      if (transitionProgress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        displaySides = targetSides;
+        draw();
+      }
+    }
+
+    // Animation loop (auto-incrementing sides)
+    function startAnimation() {
+      if (animating) return;
+      animating = true;
+      btnAnimate.classList.add("active");
+      btnAnimate.textContent = "Pause";
+
+      function step() {
+        if (!animating) return;
+        const next = sides + 1;
+        if (next > 1000) {
+          stopAnimation();
+          return;
+        }
+        setSides(next);
+        animTimer = setTimeout(step, parseInt(speedSelect.value));
+      }
+      step();
+    }
+
+    function stopAnimation() {
+      animating = false;
+      clearTimeout(animTimer);
+      btnAnimate.classList.remove("active");
+      btnAnimate.textContent = "Animate";
+    }
+
+    function reset() {
+      stopAnimation();
+      displaySides = 3;
+      targetSides = 3;
+      sides = 3;
+      transitionProgress = 1;
+      sidesInput.value = 3;
+      draw();
+    }
+
+    // Event listeners
+    btnAnimate.addEventListener("click", () => {
+      animating ? stopAnimation() : startAnimation();
+    });
+
+    btnReset.addEventListener("click", reset);
+
+    sidesInput.addEventListener("input", () => {
+      const val = parseInt(sidesInput.value);
+      if (!isNaN(val) && val >= 3) {
+        stopAnimation();
+        setSides(val);
+      }
+    });
+
+    speedSelect.addEventListener("change", () => {
+      if (animating) {
+        stopAnimation();
+        startAnimation();
+      }
+    });
+
+    window.addEventListener("resize", resize);
+    resize();
+  </script>
+</body>
+</html>
